@@ -45,30 +45,67 @@ class InfectionGraph(nx.Graph):
         else:
             raise AbsentNodeError('remove', user1.id, user2.id)
 
-    def total_infection(self, user):
-        for group in nx.connected_component_subgraphs(self):
-            if user.id in group:
-                for ident in group:
-                    self.node[ident]['user']['version'] = user.version
-                print 'Infected {}, starting with User {}'.format(len(group), 
-                    user.id)
-                break
+    def infect_group(self, version, group):
+        for ident in group:
+            self.node[ident]['user']['version'] = version
+        print 'Infected group with {} members'.format(len(group))
 
-    def limited_infection(self, target, cushion):
-        Subgraph = namedtuple('Subgraph', 'size first_member')
-        graphs = [Subgraph(size=len(sub), first_member=sub[0]) for sub in 
+    def total_infection(self, version, user):
+        group = nx.connected_components(self)
+        while True:
+            try:
+                sub = group.next()
+                if user.id in sub:
+                    infect_group(self, version, sub)
+                    break
+            except StopIteration:
+                print 'User {} is not in the graph! No infection'.format(user.id)
+
+    def limited_infection(self, version, target, boundary):
+        group = nx.connected_components(self)
+        total = 0
+        infected = []
+        while total < target - boundary:
+            sub = group.next()
+            infected.append(sub)
+            total += len(sub)
+        if total < target + boundary: # Close to target
+            for sub in infected:
+                infect_group(self, version, sub)
+                return True
+        else:
+            while True:
+                try:
+                    for i in xrange(infected):
+                        temp = infected[:i] + infected[i+1:]
+                        temp_total = sum(len(sub) for sub in temp)
+                        if target - boundary < temp_total < target + boundary:
+                            for sub in temp:
+                                infect_group(self, version, sub)
+                            return True
+                    infected.pop()
+                    infected.append(group.next())
+
+                except StopIteration:
+                    print ('Could not find a grouping at specified boundary. '
+                        'Try raising boundary!')
+                    return False
+
+    def exact_infection(self, version, target):
+        Subgraph = namedtuple('Subgraph', 'size members')
+        graphs = [Subgraph(size=len(sub), members=sub) for sub in 
             nx.connected_components(self)].sort(key=operator.itemgetter(0),
                 reverse=True)
         
         add_loc = 0
         stack = [graphs[add_loc]]
         while True:
-            if target - cushion < sum(sub.size for sub in stack) < target + cushion:
+            if sum(sub.size for sub in stack) == target:
                 for sub in stack:
-                    total_infection(self, self.node[sub.first_member]['user'])
+                    infect_group(self, version, sub.members)
                 return True # BOO-YA!
 
-            elif sum(sub.size for sub in stack) > target + cushion:
+            elif sum(sub.size for sub in stack) > target:
                 stack.pop()
                 add_loc += 1
                 if add_loc < len(graphs):
