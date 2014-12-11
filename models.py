@@ -20,30 +20,33 @@ class User(object):
 
     # Used in unit tests
     def _reset_id_gen(self):
-        new_id = itertools.count().next
+        self.__class__.new_id = itertools.count().next
+
+# class AbsentNodeError(Exception):
+#         def __init__(self, etype, user1_id, user2_id):
+#             if etype == 'add':
+#                 self.msg = ('User {} and/or User {} are not in graph '
+#                 'and thus cannot be connected').format(user1_id, user2_id)
+#             elif etype == 'remove':
+#                 self.msg = ('User {} and/or User {} are not in graph '
+#                 'and thus cannot be disconnected').format(user1_id, user2_id)
 
 class InfectionGraph(nx.Graph):
-    
-    class AbsentNodeError(Exception):
-        def __init__(self, etype, user1_id, user2_id):
-            if etype == 'add':
-                self.msg = ('User {} and/or User {} are not in graph '
-                'and thus cannot be connected').format(user1_id, user2_id)
-            elif etype == 'remove':
-                self.msg = ('User {} and/or User {} are not in graph '
-                'and thus cannot be disconnected').format(user1_id, user2_id)
 
     def add_connection(self, user1, user2):
-        if user1.id in self and user2.id in self:
+        try:
             self.add_edge(user1.id, user2.id)
-        else:
-            raise AbsentNodeError('add', user1.id, user2.id)
+        except AttributeError:
+            print ('Cannot add connection. Either {} or {} does not have an id'
+                ' Are you sure they are both users?').format(user1, user2)
 
     def remove_connection(self, user1, user2):
-        if user1.id in self and user2.id in self:
+        try:
             self.remove_edge(user1.id, user2.id)
-        else:
-            raise AbsentNodeError('remove', user1.id, user2.id)
+        except AttributeError:
+            print ('Cannot remove connection. Either {} or {} does not have '
+                'an id. Are you sure they are both users?').format(
+                user1, user2)
 
     def infect_group(self, version, group):
         for ident in group:

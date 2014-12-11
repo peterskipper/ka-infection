@@ -1,3 +1,4 @@
+import networkx as nx
 from models import User, InfectionGraph
 import unittest
 
@@ -6,6 +7,7 @@ class TestUser(unittest.TestCase):
     @classmethod
     def setUpClass(self):
         self.graph = InfectionGraph()
+        User(graph=self.graph)._reset_id_gen()
         self.alice = User(name='Alice', graph=self.graph)
         self.bob = User(name='Bob', version='red', graph=self.graph)
 
@@ -23,7 +25,8 @@ class TestUser(unittest.TestCase):
 
     @classmethod
     def tearDownClass(self):
-        self.alice._reset_id_gen()
+        self.graph.clear()
+        User(graph=self.graph)._reset_id_gen()
 
 if __name__ == '__main__':
     unittest.main()
