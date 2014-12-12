@@ -22,15 +22,6 @@ class User(object):
     def _reset_id_gen(self):
         self.__class__.new_id = itertools.count().next
 
-# class AbsentNodeError(Exception):
-#         def __init__(self, etype, user1_id, user2_id):
-#             if etype == 'add':
-#                 self.msg = ('User {} and/or User {} are not in graph '
-#                 'and thus cannot be connected').format(user1_id, user2_id)
-#             elif etype == 'remove':
-#                 self.msg = ('User {} and/or User {} are not in graph '
-#                 'and thus cannot be disconnected').format(user1_id, user2_id)
-
 class InfectionGraph(nx.Graph):
 
     def add_connection(self, user1, user2):
@@ -39,6 +30,10 @@ class InfectionGraph(nx.Graph):
         except AttributeError:
             print ('Cannot add connection. Either {} or {} does not have an id'
                 ' Are you sure they are both users?').format(user1, user2)
+    
+    def _add_mult_conns(self, conn_list):
+        for conn in conn_list: #conn is a namedtuple
+            self.add_connection(conn.user1, conn.user2)
 
     def remove_connection(self, user1, user2):
         try:
@@ -50,8 +45,9 @@ class InfectionGraph(nx.Graph):
 
     def infect_group(self, version, group):
         for ident in group:
-            self.node[ident]['user']['version'] = version
-        print 'Infected group with {} members'.format(len(group))
+            self.node[ident]['user'].version = version
+        print 'Infected group with {} members, including'.format(len(group),
+            self.node[group[0]]['user'].name)
 
     def total_infection(self, version, user):
         group = nx.connected_components(self)
@@ -59,7 +55,7 @@ class InfectionGraph(nx.Graph):
             try:
                 sub = group.next()
                 if user.id in sub:
-                    infect_group(self, version, sub)
+                    self.infect_group(version, sub)
                     break
             except StopIteration:
                 print 'User {} is not in the graph! No infection'.format(user.id)
@@ -74,7 +70,7 @@ class InfectionGraph(nx.Graph):
             total += len(sub)
         if total < target + boundary: # Close to target
             for sub in infected:
-                infect_group(self, version, sub)
+                self.infect_group(version, sub)
                 return True
         else:
             while True:
@@ -84,7 +80,7 @@ class InfectionGraph(nx.Graph):
                         temp_total = sum(len(sub) for sub in temp)
                         if target - boundary < temp_total < target + boundary:
                             for sub in temp:
-                                infect_group(self, version, sub)
+                                self.infect_group(version, sub)
                             return True
                     infected.pop()
                     infected.append(group.next())
@@ -105,7 +101,7 @@ class InfectionGraph(nx.Graph):
         while True:
             if sum(sub.size for sub in stack) == target:
                 for sub in stack:
-                    infect_group(self, version, sub.members)
+                    self.infect_group(version, sub.members)
                 return True # BOO-YA!
 
             elif sum(sub.size for sub in stack) > target:
@@ -122,4 +118,3 @@ class InfectionGraph(nx.Graph):
                     stack.append(graphs[add_loc])
                 else:
                     return False # Quit searching
-
