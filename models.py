@@ -2,6 +2,7 @@ import itertools
 import networkx as nx
 from collections import namedtuple
 import operator
+import sys
 
 class User(object):
     new_id = itertools.count().next
@@ -63,19 +64,30 @@ class InfectionGraph(nx.Graph):
     def limited_infection(self, version, target, boundary):
         group = nx.connected_components(self)
         infected = []
-        
-        try:
-            while sum(len(sub) for sub in infected) < target - boundary:
-                infected.append(group.next())
-        except StopIteration:
-            print ('Infecting ALL groups is lower than target. '
-                'Pick smaller target!')
+        closest = sys.maxint
+        lower = target - boundary if target - boundary > 1 else 1
+        if target > len(self.nodes()):
+            print('Infecting ALL groups is lower than target. '
+                'Pick smaller target! '
+                'Target: {} All Nodes: {}').format(target, 
+                len(self.nodes()))
             return False
+        else:
+            upper = target + boundary
         
-        closest = abs(sum(len(sub) for sub in infected) - target)
-        
-        while True: 
-            if target - boundary <= sum(len(sub) for sub in infected) <= target + boundary:
+        while True:
+            try:
+                # Build up list until it's above target's lower boundary
+                while sum(len(sub) for sub in infected) < lower:
+                    infected.append(group.next())
+            except StopIteration:
+                if closest == sys.maxint:
+                    closest = abs(sum(len(sub) for sub in infected)-target)
+                print('Could not find a grouping at specified boundary. '
+                'Try raising boundary by {}').format(closest-boundary)
+                return False 
+            
+            if sum(len(sub) for sub in infected) <= upper:
                 for sub in infected:
                     self.infect_group(version, sub)
                 return True
@@ -86,7 +98,7 @@ class InfectionGraph(nx.Graph):
                 temp_total = sum(len(sub) for sub in temp)
                 if abs(temp_total-target) < closest:
                     closest = abs(temp_total-target)
-                if target - boundary <= temp_total <= target + boundary:
+                if lower <= temp_total <= upper:
                     for sub in temp:
                         self.infect_group(version, sub)
                     return True
@@ -97,16 +109,16 @@ class InfectionGraph(nx.Graph):
             try:
                 infected.append(group.next())
             except StopIteration:
-                print ('Could not find a grouping at specified boundary. '
-                    'Try raising boundary by {}'.format(closest))
+                print('Could not find a grouping at specified boundary. '
+                    'Try raising boundary by {}').format(closest-boundary)
                 return False
 
     def exact_infection(self, version, target):
         Subgraph = namedtuple('Subgraph', 'size members')
-        graphs = [Subgraph(size=len(sub), members=sub) for sub in 
-            nx.connected_components(self)].sort(key=operator.itemgetter(0),
-                reverse=True)
-        
+        graphs = []
+        for sub in nx.connected_components(self):
+            graphs.append(Subgraph(size=len(sub), members=sub))
+        graphs.sort(key=operator.itemgetter(0), reverse=True)
         add_loc = 0
         stack = [graphs[add_loc]]
         while True:

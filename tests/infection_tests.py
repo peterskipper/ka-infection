@@ -40,6 +40,7 @@ class TestInfection(unittest.TestCase):
         all_conns = [Conn(self.alice, self.bob),
             Conn(self.alice, self.carol),
             Conn(self.dave,self.enid),
+            Conn(self.dave, self.iris),
             Conn(self.enid, self.frank),
             Conn(self.enid, self.grace),
             Conn(self.enid, self.henry),
@@ -71,28 +72,28 @@ class TestInfection(unittest.TestCase):
             self.assertEqual(user.version, 'green')
 
         self.graph.total_infection('red', self.dave)
-        for user in self.all_users[3:8]:
+        for user in self.all_users[3:9]:
             self.assertEqual(user.version, 'red')
-        for user_id in range(3,8):
+        for user_id in range(3,9):
             self.assertEqual(self.graph.node[user_id]['user'].version, 'red')
         
         # Check that no one else changed
-        for user in self.all_users[0:3] + self.all_users[8:]:
+        for user in self.all_users[0:3] + self.all_users[9:]:
             self.assertEqual(user.version, 'green')
-        for user_id in range(0,3) + range(8,21):
+        for user_id in range(0,3) + range(9,21):
             self.assertEqual(self.graph.node[user_id]['user'].version, 'green')
 
         # Switch one more group
         self.graph.total_infection('red', self.ophelia)
-        for user in self.all_users[3:8] + self.all_users[9:17]:
+        for user in self.all_users[3:17]:
             self.assertEqual(user.version, 'red')
-        for user_id in range(3,8) + range(9,17):
+        for user_id in range(3,17):
             self.assertEqual(self.graph.node[user_id]['user'].version, 'red')
 
         # Check that no one else changed
-        for user in self.all_users[0:3] + self.all_users[8:9] + self.all_users[17:]:
+        for user in self.all_users[0:3] + self.all_users[17:]:
              self.assertEqual(user.version, 'green')
-        for user_id in range(0,3) + range(8,9) + range(17,21):
+        for user_id in range(0,3) + range(17,21):
             self.assertEqual(self.graph.node[user_id]['user'].version, 'green')
 
         # Switch everyone back
@@ -110,7 +111,7 @@ class TestInfection(unittest.TestCase):
             self.assertEqual(user.version, 'green')
 
         self.assertFalse(self.graph.limited_infection(
-            version='red', target=2, boundary=0))
+            version='red', target=1, boundary=1))
 
         for user in self.all_users:
             self.assertEqual(user.version, 'green')
@@ -118,6 +119,12 @@ class TestInfection(unittest.TestCase):
         self.assertTrue(self.graph.limited_infection(
             version='red', target=6, boundary=1))
 
+        infect_count = 0 
+        for user in self.all_users:
+            if user.version == 'red':
+                infect_count += 1
+        self.assertTrue(5 <= infect_count <= 7)
+        
         # Switch back
         for user in self.all_users:
             user.version = 'green'
@@ -143,6 +150,29 @@ class TestInfection(unittest.TestCase):
             if user.version == 'red':
                 infect_count += 1
         self.assertTrue(17 <= infect_count <= 19)
+
+        # Switch back
+        for user in self.all_users:
+            user.version = 'green'
+
+    def testExactInfection(self):
+        for user in self.all_users:
+            self.assertEqual(user.version, 'green')
+
+        self.assertFalse(self.graph.exact_infection(
+            version='red', target=16))
+
+        for user in self.all_users:
+            self.assertEqual(user.version, 'green')
+
+        self.assertTrue(self.graph.exact_infection(
+            version='red', target=11))
+
+        infect_count = 0 
+        for user in self.all_users:
+            if user.version == 'red':
+                infect_count += 1
+        self.assertEqual(infect_count, 11)
 
         # Switch back
         for user in self.all_users:
