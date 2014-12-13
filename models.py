@@ -46,8 +46,8 @@ class InfectionGraph(nx.Graph):
     def infect_group(self, version, group):
         for ident in group:
             self.node[ident]['user'].version = version
-        print 'Infected group with {} members, including'.format(len(group),
-            self.node[group[0]]['user'].name)
+        print ('Infected group with {} members, including {}'.format(len(group),
+            self.node[group[0]]['user'].name))
 
     def total_infection(self, version, user):
         group = nx.connected_components(self)
@@ -62,33 +62,44 @@ class InfectionGraph(nx.Graph):
 
     def limited_infection(self, version, target, boundary):
         group = nx.connected_components(self)
-        total = 0
         infected = []
-        while total < target - boundary:
-            sub = group.next()
-            infected.append(sub)
-            total += len(sub)
-        if total < target + boundary: # Close to target
-            for sub in infected:
-                self.infect_group(version, sub)
+        
+        try:
+            while sum(len(sub) for sub in infected) < target - boundary:
+                infected.append(group.next())
+        except StopIteration:
+            print ('Infecting ALL groups is lower than target. '
+                'Pick smaller target!')
+            return False
+        
+        closest = abs(sum(len(sub) for sub in infected) - target)
+        
+        while True: 
+            if target - boundary <= sum(len(sub) for sub in infected) <= target + boundary:
+                for sub in infected:
+                    self.infect_group(version, sub)
                 return True
-        else:
-            while True:
-                try:
-                    for i in xrange(infected):
-                        temp = infected[:i] + infected[i+1:]
-                        temp_total = sum(len(sub) for sub in temp)
-                        if target - boundary < temp_total < target + boundary:
-                            for sub in temp:
-                                self.infect_group(version, sub)
-                            return True
-                    infected.pop()
-                    infected.append(group.next())
 
-                except StopIteration:
-                    print ('Could not find a grouping at specified boundary. '
-                        'Try raising boundary!')
-                    return False
+            # Infected is too large.  Try Leave-One-Out
+            for i in xrange(len(infected)):
+                temp = infected[:i] + infected[i+1:]
+                temp_total = sum(len(sub) for sub in temp)
+                if abs(temp_total-target) < closest:
+                    closest = abs(temp_total-target)
+                if target - boundary <= temp_total <= target + boundary:
+                    for sub in temp:
+                        self.infect_group(version, sub)
+                    return True
+            
+            # No Leave-One-Out versions worked.  Pop the last group appended
+            # And append a different group
+            infected.pop()
+            try:
+                infected.append(group.next())
+            except StopIteration:
+                print ('Could not find a grouping at specified boundary. '
+                    'Try raising boundary by {}'.format(closest))
+                return False
 
     def exact_infection(self, version, target):
         Subgraph = namedtuple('Subgraph', 'size members')

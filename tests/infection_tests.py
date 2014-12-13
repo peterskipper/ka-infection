@@ -99,6 +99,55 @@ class TestInfection(unittest.TestCase):
         self.graph.total_infection('green', self.dave)
         self.graph.total_infection('green', self.ophelia)
 
+    def testLimitedInfection(self):
+        for user in self.all_users:
+            self.assertEqual(user.version, 'green')
+
+        self.assertFalse(self.graph.limited_infection(
+            version='red', target=25, boundary=1))
+
+        for user in self.all_users:
+            self.assertEqual(user.version, 'green')
+
+        self.assertFalse(self.graph.limited_infection(
+            version='red', target=2, boundary=0))
+
+        for user in self.all_users:
+            self.assertEqual(user.version, 'green')
+
+        self.assertTrue(self.graph.limited_infection(
+            version='red', target=6, boundary=1))
+
+        # Switch back
+        for user in self.all_users:
+            user.version = 'green'
+
+        self.assertTrue(self.graph.limited_infection(
+            version='red', target=8, boundary=2))
+
+        infect_count = 0 
+        for user in self.all_users:
+            if user.version == 'red':
+                infect_count += 1
+        self.assertTrue(6 <= infect_count <= 10)
+
+        # Switch back
+        for user in self.all_users:
+            user.version = 'green'
+
+        self.assertTrue(self.graph.limited_infection(
+            version='red', target=18, boundary=1))
+
+        infect_count = 0 
+        for user in self.all_users:
+            if user.version == 'red':
+                infect_count += 1
+        self.assertTrue(17 <= infect_count <= 19)
+
+        # Switch back
+        for user in self.all_users:
+            user.version = 'green'
+
     @classmethod
     def tearDownClass(self):
         self.graph.clear()
