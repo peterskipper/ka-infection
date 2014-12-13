@@ -47,8 +47,8 @@ class InfectionGraph(nx.Graph):
     def infect_group(self, version, group):
         for ident in group:
             self.node[ident]['user'].version = version
-        print ('Infected group with {} members, including {}'.format(len(group),
-            self.node[group[0]]['user'].name))
+        print ('Infected group with {} member(s), including {}'.format(
+            len(group),self.node[group[0]]['user'].name))
 
     def total_infection(self, version, user):
         group = nx.connected_components(self)
@@ -84,7 +84,7 @@ class InfectionGraph(nx.Graph):
                 if closest == sys.maxint:
                     closest = abs(sum(len(sub) for sub in infected)-target)
                 print('Could not find a grouping at specified boundary. '
-                'Try raising boundary by {}').format(closest-boundary)
+                'Try raising boundary by {}').format(closest-boundary+1)
                 return False 
             
             if sum(len(sub) for sub in infected) <= upper:
@@ -110,7 +110,7 @@ class InfectionGraph(nx.Graph):
                 infected.append(group.next())
             except StopIteration:
                 print('Could not find a grouping at specified boundary. '
-                    'Try raising boundary by {}').format(closest-boundary)
+                    'Try raising boundary by {}').format(closest-boundary + 1)
                 return False
 
     def exact_infection(self, version, target):
