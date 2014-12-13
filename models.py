@@ -60,6 +60,7 @@ class InfectionGraph(nx.Graph):
                     break
             except StopIteration:
                 print 'User {} is not in the graph! No infection'.format(user.id)
+                break
 
     def limited_infection(self, version, target, boundary):
         group = nx.connected_components(self)
