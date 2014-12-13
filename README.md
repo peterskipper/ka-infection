@@ -49,21 +49,17 @@ graph.exact_infection(version='red', target=1)
 
 <p>
 Install dependencies from the root directory with:
-<blockquote>
-  
+</p> 
 ``` sh
 $ pip install -r requirements.txt
 ```  
-</blockquote>
-</p>
 
 <h2>Tests</h2>
 
-<p>Run tests from the root directory with:
-<blockquote>
+<p>
+Run tests from the root directory with:
+</p>
 ``` sh
 $ nosetests tests
 ```
-</blockquote>
-</p>
 
