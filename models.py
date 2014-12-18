@@ -121,9 +121,11 @@ class InfectionGraph(nx.Graph):
         for sub in nx.connected_components(self):
             graphs.append(Subgraph(size=len(sub), members=sub))
         graphs.sort(key=operator.itemgetter(0), reverse=True)
-        add_loc = 0
-        stack = [graphs[add_loc]]
+        start = 0
+        add_loc = start
+        stack = [graphs[start]]
         while True:
+            add_loc += 1
             if sum(sub.size for sub in stack) == target:
                 for sub in stack:
                     self.infect_group(version, sub.members)
@@ -131,14 +133,16 @@ class InfectionGraph(nx.Graph):
 
             elif sum(sub.size for sub in stack) > target:
                 stack.pop()
-                add_loc += 1
                 if add_loc < len(graphs):
                     stack.append(graphs[add_loc])
+                elif start < len(graphs) - 1:
+                    start += 1
+                    add_loc = start
+                    stack = [graphs[start]]
                 else:
                     return False # Quit searching
 
             else:
-                add_loc += 1
                 if add_loc < len(graphs):
                     stack.append(graphs[add_loc])
                 else:
