@@ -6,18 +6,18 @@ import sys
 
 class User(object):
     new_id = itertools.count().next
-    
+
     def __init__(self, graph, name='', version='green'):
         self.id = User.new_id()
         self.name = name
         self.version = version
-        
+
         #Update graph with new person
         graph.add_node(self.id, user=self)
-        
+
     def __repr__(self):
         return 'Id: {}, Name: {}, Version: {}'.format(self.id, self.name,
-            self.version)
+                                                      self.version)
 
     # Used in unit tests
     def _reset_id_gen(self):
@@ -30,8 +30,8 @@ class InfectionGraph(nx.Graph):
             self.add_edge(user1.id, user2.id)
         except AttributeError:
             print ('Cannot add connection. Either {} or {} does not have an id'
-                ' Are you sure they are both users?').format(user1, user2)
-    
+                   ' Are you sure they are both users?').format(user1, user2)
+
     def _add_mult_conns(self, conn_list):
         for conn in conn_list: #conn is a namedtuple
             self.add_connection(conn.user1, conn.user2)
@@ -41,14 +41,14 @@ class InfectionGraph(nx.Graph):
             self.remove_edge(user1.id, user2.id)
         except AttributeError:
             print ('Cannot remove connection. Either {} or {} does not have '
-                'an id. Are you sure they are both users?').format(
-                user1, user2)
+                   'an id. Are you sure they are both users?').format(
+                       user1, user2)
 
     def infect_group(self, version, group):
         for ident in group:
             self.node[ident]['user'].version = version
         print ('Infected group with {} member(s), including {}'.format(
-            len(group),self.node[group[0]]['user'].name))
+            len(group), self.node[group[0]]['user'].name))
 
     def total_infection(self, version, user):
         group = nx.connected_components(self)
@@ -69,13 +69,13 @@ class InfectionGraph(nx.Graph):
         lower = target - boundary if target - boundary > 1 else 1
         if target > len(self.nodes()):
             print('Infecting ALL groups is lower than target. '
-                'Pick smaller target! '
-                'Target: {} All Nodes: {}').format(target, 
-                len(self.nodes()))
+                  'Pick smaller target! '
+                  'Target: {} All Nodes: {}').format(target,
+                                                     len(self.nodes()))
             return False
         else:
             upper = target + boundary
-        
+
         while True:
             try:
                 # Build up list until it's above target's lower boundary
@@ -85,9 +85,9 @@ class InfectionGraph(nx.Graph):
                 if closest == sys.maxint:
                     closest = abs(sum(len(sub) for sub in infected)-target)
                 print('Could not find a grouping at specified boundary. '
-                'Try raising boundary by {}').format(closest-boundary+1)
-                return False 
-            
+                      'Try raising boundary by {}').format(closest-boundary+1)
+                return False
+
             if sum(len(sub) for sub in infected) <= upper:
                 for sub in infected:
                     self.infect_group(version, sub)
@@ -103,7 +103,7 @@ class InfectionGraph(nx.Graph):
                     for sub in temp:
                         self.infect_group(version, sub)
                     return True
-            
+
             # No Leave-One-Out versions worked.  Pop the last group appended
             # And append a different group
             infected.pop()
@@ -111,7 +111,8 @@ class InfectionGraph(nx.Graph):
                 infected.append(group.next())
             except StopIteration:
                 print('Could not find a grouping at specified boundary. '
-                    'Try raising boundary by {}').format(closest-boundary + 1)
+                      'Try raising boundary by {}').format(
+                          closest-boundary + 1)
                 return False
 
     def exact_infection(self, version, target):
